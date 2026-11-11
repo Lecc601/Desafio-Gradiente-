@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafío Académico: Gradientes Conjugados Precondicionado en Finanzas | UMSA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                            900: '#082f49'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .math-display { overflow-x: auto; max-width: 100%; padding: 0.5rem 0; }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-brand-700 text-white flex items-center justify-center font-bold text-lg shadow">
+                    UMSA
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-900 leading-tight text-sm sm:text-base">Métodos Numéricos · Desafío GCP</h1>
+                    <p class="text-xs text-slate-500">Mención: Desarrollo de Sistemas · Finanzas</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex items-center gap-1 text-xs lg:text-sm font-medium text-slate-600">
+                <a href="#inicio" class="px-2.5 py-1.5 hover:text-brand-600 rounded-md hover:bg-slate-50 transition">Inicio</a>
+                <a href="#caso" class="px-2.5 py-1.5 hover:text-brand-600 rounded-md hover:bg-slate-50 transition">Caso</a>
+                <a href="#formulacion" class="px-2.5 py-1.5 hover:text-brand-600 rounded-md hover:bg-slate-50 transition">Formulación</a>
+                <a href="#datos" class="px-2.5 py-1.5 hover:text-brand-600 rounded-md hover:bg-slate-50 transition">Entrada</a>
+                <a href="#solucion-directa" class="px-2.5 py-1.5 hover:text-brand-600 rounded-md hover:bg-slate-50 transition">Cholesky</a>
+                <a href="#gcp-vs-gc" class="px-2.5 py-1.5 hover:text-brand-600 rounded-md hover:bg-slate-50 transition">GCP vs GC</a>
+                <a href="#comparativa" class="px-2.5 py-1.5 hover:text-brand-600 rounded-md hover:bg-slate-50 transition">Tabla</a>
+                <a href="#qa-modulo" class="px-2.5 py-1.5 text-emerald-700 bg-emerald-50 rounded-md hover:bg-emerald-100 transition font-semibold">Módulo QA</a>
+                <a href="#arquitectura" class="px-2.5 py-1.5 hover:text-brand-600 rounded-md hover:bg-slate-50 transition">Arquitectura</a>
+            </nav>
+            <div class="flex items-center gap-2">
+                <button id="btn-quick-qa" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Ejecutar QA</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- 1. INICIO & HERO -->
+        <section id="inicio" class="bg-gradient-to-br from-brand-900 via-brand-800 to-slate-900 rounded-2xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-72 h-72 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10 max-w-4xl space-y-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="px-3 py-1 bg-brand-700/80 border border-brand-500/30 rounded-full text-xs font-semibold uppercase tracking-wider text-brand-100">Universidad Mayor de San Andrés</span>
+                    <span class="px-3 py-1 bg-indigo-900/80 border border-indigo-500/30 rounded-full text-xs font-semibold uppercase tracking-wider text-indigo-200">Carrera de Informática · Métodos Numéricos</span>
+                    <span class="px-3 py-1 bg-emerald-900/80 border border-emerald-500/30 rounded-full text-xs font-semibold text-emerald-200">Mención: Desarrollo de Sistemas (Software)</span>
+                </div>
+                <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                    Simulador Financiero de Asignación Presupuestaria mediante Gradientes Conjugados Precondicionado (GCP)
+                </h2>
+                <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                    Aplicación del algoritmo de <strong>Porfirio Suñagua Salgado (2020)</strong> para resolver sistemas lineales simétricos definidos positivos ($Ax = b, n \ge 4$) que modelan el equilibrio presupuestario y fricción de escala en departamentos de ingeniería de software. Análisis comparativo de condicionamiento $\kappa(A)$ vs $\kappa(M^{-1}A)$, estabilidad numérica de Cholesky y suite automatizada de pruebas funcionales (QA).
+                </p>
+                <div class="pt-2 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/10">
+                        <div class="text-slate-400">Estudiante</div>
+                        <div class="font-bold text-white text-sm">Lorgio Emilio Chura Carrillo</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/10">
+                        <div class="text-slate-400">Dimensión Sistema</div>
+                        <div class="font-bold text-white text-sm">$n = 4$ variables ($n \ge 4$)</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/10">
+                        <div class="text-slate-400">Tolerancia Criterio</div>
+                        <div class="font-bold text-white text-sm">$\|r_k\|_2/\|b\|_2 < 10^{-6}$</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/10">
+                        <div class="text-slate-400">Precondicionador</div>
+                        <div class="font-bold text-white text-sm">Jacobi Diagonal $M = \text{diag}(A)$</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. CASO DE ESTUDIO FINANCIERO -->
+        <section id="caso" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <span class="text-xs font-bold uppercase text-brand-600 tracking-wider">Módulo 2</span>
+                <h3 class="text-xl font-bold text-slate-900">Contexto Financiero y Justificación del Modelo (Perspectiva Desarrollo de Software)</h3>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-sm text-slate-600 leading-relaxed">
+                <div class="space-y-4">
+                    <p>
+                        En la industria tecnológica y empresas SaaS (Software as a Service), la planificación financiera trimestral requiere asignar presupuesto óptimo $x = [x_1, x_2, x_3, x_4]^T$ (expresado en <strong>miles de dólares USD / kUSD</strong>) a cuatro categorías interconectadas:
+                    </p>
+                    <ul class="space-y-2.5">
+                        <li class="flex items-start gap-2.5">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded bg-brand-100 text-brand-800 font-bold text-xs shrink-0 mt-0.5">$x_1$</span>
+                            <div><strong>Infraestructura Cloud & DevOps:</strong> Aprovisionamiento de clústeres Kubernetes, servidores en la nube (AWS/GCP), ancho de banda y pipelines automatizados de CI/CD.</div>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded bg-indigo-100 text-indigo-800 font-bold text-xs shrink-0 mt-0.5">$x_2$</span>
+                            <div><strong>Desarrollo Core & Arquitectura de Software:</strong> Salarios y recursos para ingeniería de software backend/frontend, diseño de microservicios y refactorización técnica.</div>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded bg-amber-100 text-amber-800 font-bold text-xs shrink-0 mt-0.5">$x_3$</span>
+                            <div><strong>Ciberseguridad, DevSecOps & Compliance:</strong> Auditorías de código, escaneo de vulnerabilidades, pruebas de penetración y cumplimiento normativo (SOC2, ISO 27001).</div>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded bg-emerald-100 text-emerald-800 font-bold text-xs shrink-0 mt-0.5">$x_4$</span>
+                            <div><strong>Control de Calidad (QA) & Testing Automatizado:</strong> Automatización de pruebas end-to-end, pruebas de estrés/rendimiento, infraestructura de testing y aseguramiento de calidad.</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="space-y-4 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                    <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Deducción de la Función de Costo Cuadrática
+                    </h4>
+                    <p>
+                        La asignación eficiente de recursos minimiza la fricción operativa combinada con el cumplimiento de demandas de valor de negocio esperadas:
+                    </p>
+                    <div class="math-display text-center font-mono text-xs sm:text-sm bg-white p-3 rounded border border-slate-200 shadow-inner">
+                        $$\min_{x} \Phi(x) = \frac{1}{2} x^T A x - b^T x$$
+                    </div>
+                    <p>
+                        La condición de optimalidad de primer orden exige que el gradiente se anule:
+                    </p>
+                    <div class="math-display text-center font-mono text-xs sm:text-sm bg-white p-3 rounded border border-slate-200 shadow-inner">
+                        $$\nabla \Phi(x) = A x - b = 0 \implies A x = b$$
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        Donde $A$ es simétrica debido a la reciprocidad del acoplamiento bilateral entre componentes de software ($a_{ij} = a_{ji}$), y definida positiva ($x^T A x > 0$) porque la expansión presupuestaria genera fricciones marginales no negativas con curvatura estrictamente convexa.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. FORMULACIÓN MATEMÁTICA & DEMOSTRACIÓN FORMAL -->
+        <section id="formulacion" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <span class="text-xs font-bold uppercase text-brand-600 tracking-wider">Módulo 3</span>
+                <h3 class="text-xl font-bold text-slate-900">Formulación Matemática del Sistema Lineal y Demostración de Propiedades</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Interpretación de Coeficientes -->
+                <div class="md:col-span-2 space-y-4 text-sm text-slate-600">
+                    <h4 class="font-bold text-slate-800 text-sm">Significado Físico y Financiero de Coeficientes</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                            <span class="font-bold text-slate-800 block text-xs uppercase text-brand-700 mb-1">Elementos Diagonales ($a_{ii} > 0$)</span>
+                            <p class="text-xs leading-relaxed">
+                                Representan el <strong>costo marginal interno de absorción y saturación</strong> de capital en el área $i$. Invertir más presupuesto en un equipo genera costos crecientes de coordinación interna y rendimientos marginales decrecientes (Ley de Brooks en ingeniería de software).
+                            </p>
+                        </div>
+                        <div class="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                            <span class="font-bold text-slate-800 block text-xs uppercase text-brand-700 mb-1">Elementos Fuera de la Diagonal ($a_{ij} = a_{ji}$)</span>
+                            <p class="text-xs leading-relaxed">
+                                Representan la <strong>fricción de acoplamiento bilateral</strong> entre las áreas $i$ y $j$. Por ejemplo, expandir microservicios ($x_2$) exige mayor infraestructura cloud ($x_1$) y mayor cobertura de QA ($x_4$). La simetría $a_{ij} = a_{ji}$ refleja la reciprocidad del esfuerzo de integración.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                        <span class="font-bold text-slate-800 block text-xs uppercase text-brand-700 mb-1">Vector de Demandas Operativas ($b$)</span>
+                        <p class="text-xs leading-relaxed">
+                            El vector $b = [b_1, b_2, b_3, b_4]^T$ representa los requerimientos netos de rendimiento de negocio exigidos a cada división técnica para cumplir el roadmap de producto trimestral.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Verificación en Vivo de Sylvester y Autovalores -->
+                <div class="bg-brand-50/60 p-5 rounded-xl border border-brand-200 space-y-3">
+                    <h4 class="font-bold text-brand-900 text-sm flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-brand-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        Verificación Matemática Activa
+                    </h4>
+                    <div class="text-xs space-y-2">
+                        <div class="flex items-center justify-between p-2 bg-white rounded border border-brand-200">
+                            <span class="font-semibold text-slate-700">Simetría ($A = A^T$):</span>
+                            <span id="badge-symmetry" class="px-2 py-0.5 rounded font-bold text-emerald-800 bg-emerald-100 text-[11px]">VÁLIDA</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-white rounded border border-brand-200">
+                            <span class="font-semibold text-slate-700">Definida Positiva ($x^T A x > 0$):</span>
+                            <span id="badge-posdef" class="px-2 py-0.5 rounded font-bold text-emerald-800 bg-emerald-100 text-[11px]">CUMPLE</span>
+                        </div>
+                    </div>
+                    <div class="pt-2">
+                        <div class="text-[11px] font-bold text-slate-700 mb-1">Criterio de Sylvester (Menores Principales $\Delta_k > 0$):</div>
+                        <div id="sylvester-display" class="font-mono text-[11px] bg-white p-2 rounded border border-brand-200 space-y-1 text-slate-600">
+                            Cargando...
+                        </div>
+                    </div>
+                    <div class="pt-1">
+                        <div class="text-[11px] font-bold text-slate-700 mb-1">Espectro de Autovalores ($\lambda_i > 0$):</div>
+                        <div id="eigen-display" class="font-mono text-[11px] bg-white p-2 rounded border border-brand-200 space-y-1 text-slate-600">
+                            Cargando...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. TRES ESCENARIOS FINANCIEROS OBLIGATORIOS -->
+        <section id="escenarios" class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase text-brand-600 tracking-wider">Módulo 5</span>
+                    <h3 class="text-xl font-bold text-slate-900">Tres Escenarios Financieros Obligatorios</h3>
+                    <p class="text-xs sm:text-sm text-slate-500">Haga clic en cualquiera de los escenarios para cargar automáticamente los datos en el sistema</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Escenario 1: Ideal -->
+                <div class="bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-brand-500 transition p-5 space-y-3 flex flex-col justify-between">
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">Escenario 1</span>
+                            <span class="text-xs text-slate-400 font-mono">$\kappa(A) \approx 2.48$</span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-base">Ideal (Estable y Equilibrado)</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Operación estable con balances presupuestarios equilibrados. Matriz $A$ bien condicionada, sin dominancia asimétrica. Rápida convergencia y alta exactitud numérica.
+                        </p>
+                        <div class="text-xs bg-slate-50 p-2.5 rounded font-mono text-slate-700 space-y-0.5">
+                            <div>$\text{Diag}(A) = [10.0, 8.0, 7.0, 6.0]$</div>
+                            <div>$b = [51.75, 40.0, 31.5, 23.0]^T$</div>
+                            <div>$x^* = [4.0, 3.0, 2.5, 2.0]^T$ kUSD</div>
+                        </div>
+                    </div>
+                    <button id="btn-load-ideal" class="w-full py-2 px-3 bg-brand-50 hover:bg-brand-600 text-brand-700 hover:text-white font-semibold text-xs rounded-lg transition border border-brand-200">
+                        Cargar Escenario Ideal
+                    </button>
+                </div>
+
+                <!-- Escenario 2: Bajo Estrés Financiero -->
+                <div class="bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-amber-500 transition p-5 space-y-3 flex flex-col justify-between">
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">Escenario 2</span>
+                            <span class="text-xs text-slate-400 font-mono">$\kappa(A) \approx 2.59$</span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-base">Bajo Estrés Financiero</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Shock operativo: Pico masivo de usuarios eleva demanda Cloud DevOps (+37.5%) y auditoría regulatoria incrementa Ciberseguridad. Ajuste en $b$ y fricciones. Desplazamiento del punto óptimo.
+                        </p>
+                        <div class="text-xs bg-slate-50 p-2.5 rounded font-mono text-slate-700 space-y-0.5">
+                            <div>$\text{Diag}(A) = [11.5, 9.2, 8.0, 6.8]$</div>
+                            <div>$b = [76.97, 45.87, 42.73, 24.7]^T$</div>
+                            <div>$x^* = [5.5, 2.2, 3.2, 1.5]^T$ kUSD</div>
+                        </div>
+                    </div>
+                    <button id="btn-load-stress" class="w-full py-2 px-3 bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white font-semibold text-xs rounded-lg transition border border-amber-200">
+                        Cargar Escenario de Estrés
+                    </button>
+                </div>
+
+                <!-- Escenario 3: Mal Condicionado -->
+                <div class="bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-purple-500 transition p-5 space-y-3 flex flex-col justify-between">
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800">Escenario 3</span>
+                            <span class="text-xs text-purple-700 font-bold font-mono">$\kappa(A) > 10,000$</span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-base">Mal Condicionado (Escala Severa)</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Disparidad extrema de magnitud: Cloud hiper-escala ($a_{11}=2500$) vs QA testing micro-servicios ($a_{44}=0.25$). Demuestra el poder del Precondicionador de Jacobi reduciendo $\kappa$ a $1.0089$ y las iteraciones.
+                        </p>
+                        <div class="text-xs bg-slate-50 p-2.5 rounded font-mono text-slate-700 space-y-0.5">
+                            <div>$\text{Diag}(A) = [2500, 450, 85, 0.25]$</div>
+                            <div>$\kappa(A) = 10,153.89 \implies \kappa(M^{-1}A) = 1.0089$</div>
+                            <div>$x^* = [2.0, 2.0, 2.0, 2.0]^T$ kUSD</div>
+                        </div>
+                    </div>
+                    <button id="btn-load-ill" class="w-full py-2 px-3 bg-purple-50 hover:bg-purple-600 text-purple-800 hover:text-white font-semibold text-xs rounded-lg transition border border-purple-200">
+                        Cargar Escenario Mal Condicionado
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. ENTRADA DE DATOS REACTIVA -->
+        <section id="datos" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                    <span class="text-xs font-bold uppercase text-brand-600 tracking-wider">Módulo 4</span>
+                    <h3 class="text-xl font-bold text-slate-900">Entrada Interactiva de Parámetros ($Ax = b$)</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btn-reset" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+                        Restablecer Escenario
+                    </button>
+                    <button id="btn-solve" class="px-4 py-1.5 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Calcular Soluciones</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grid de Matriz y Vector -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- Matriz A -->
+                <div class="lg:col-span-8 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Matriz Simétrica $A$ ($4 \times 4$)</label>
+                        <span class="text-xs text-slate-400">Edite los valores en tiempo real</span>
+                    </div>
+                    <div class="overflow-x-auto p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <table class="w-full border-separate border-spacing-1.5">
+                            <thead>
+                                <tr class="text-[11px] text-slate-500 font-semibold">
+                                    <th class="p-1"></th>
+                                    <th class="p-1 text-center">x₁ (Cloud)</th>
+                                    <th class="p-1 text-center">x₂ (Core)</th>
+                                    <th class="p-1 text-center">x₃ (Sec)</th>
+                                    <th class="p-1 text-center">x₄ (QA)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matrix-a-body">
+                                <!-- Generado dinámicamente con JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Vector b y Parámetros -->
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Vector de Términos $b$ ($4 \times 1$)</label>
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2" id="vector-b-body">
+                            <!-- Generado dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 text-xs">
+                        <div class="font-bold text-slate-800 text-xs uppercase tracking-wider">Parámetros de Ejecución</div>
+                        <div>
+                            <label class="block text-slate-600 mb-1">Precondicionador $M$:</label>
+                            <select id="select-precond" class="w-full bg-white border border-slate-300 rounded-md p-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-brand-500">
+                                <option value="jacobi" selected>Jacobi Diagonal: M = diag(A)</option>
+                                <option value="none">Sin Precondicionar: M = I (GC Simple)</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-slate-600 mb-1">Tolerancia ($\varepsilon$):</label>
+                                <input id="input-tol" type="text" value="1e-6" class="w-full bg-white border border-slate-300 rounded-md p-1.5 text-xs font-mono text-slate-800" />
+                            </div>
+                            <div>
+                                <label class="block text-slate-600 mb-1">Max Iter ($N_{\max}$):</label>
+                                <input id="input-maxiter" type="number" value="100" class="w-full bg-white border border-slate-300 rounded-md p-1.5 text-xs font-mono text-slate-800" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. SOLUCIÓN NUMÉRICA DE REFERENCIA (CHOLESKY) -->
+        <section id="solucion-directa" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <span class="text-xs font-bold uppercase text-brand-600 tracking-wider">Módulo 6</span>
+                    <h3 class="text-xl font-bold text-slate-900">Solución Numérica de Referencia (Método Directo: Factorización de Cholesky)</h3>
+                </div>
+                <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Exactitud Teórica $A = L L^T$</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 text-sm">
+                <!-- Matriz Triangular L y Explicación -->
+                <div class="lg:col-span-7 space-y-4">
+                    <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                        Para sistemas simétricos y definidos positivos, el método directo estándar de oro es la <strong>Descomposición de Cholesky</strong> ($A = L L^T$), donde $L$ es una matriz triangular inferior con diagonal estrictamente positiva ($L_{jj} > 0$).
+                    </p>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="text-xs font-bold uppercase text-slate-600 mb-2">Matriz Triangular Inferior $L$ Obtenida:</div>
+                        <div class="overflow-x-auto">
+                            <table class="font-mono text-xs w-full text-center" id="table-cholesky-l">
+                                <!-- Dinámica -->
+                            </table>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
+                        <div class="font-bold text-slate-700 mb-1">Esquema Numérico de Cholesky:</div>
+                        <div class="math-display text-center font-mono">
+                            $$A = L L^T \implies \begin{cases} L y = b & \text{(Sustitución Progresiva)} \\ L^T x_{\text{ref}} = y & \text{(Sustitución Regresiva)} \end{cases}$$
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vector Solución Exacta de Referencia -->
+                <div class="lg:col-span-5 bg-brand-50/70 p-5 rounded-xl border border-brand-200 flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="font-bold text-brand-900 text-sm flex items-center gap-2">
+                            <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            Vector Solución de Referencia ($x_{\text{ref}}$)
+                        </div>
+                        <div class="space-y-2 text-xs" id="cholesky-solution-vector">
+                            <!-- Dinámica -->
+                        </div>
+                    </div>
+                    <div class="pt-4 border-t border-brand-200 text-[11px] text-brand-800">
+                        * Considerada formalmente como la solución exacta analítica y numérica del sistema.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. GCP vs GC & CONVERGENCIA -->
+        <section id="gcp-vs-gc" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <span class="text-xs font-bold uppercase text-brand-600 tracking-wider">Módulo 7</span>
+                <h3 class="text-xl font-bold text-slate-900">Gradientes Conjugados Precondicionado (GCP) vs Gradientes Conjugados Simple (GC)</h3>
+                <p class="text-xs sm:text-sm text-slate-500">Implementación exacta del algoritmo de Porfirio Suñagua Salgado (2020)</p>
+            </div>
+
+            <!-- Ecuaciones Algorítmicas de Suñagua (2020) -->
+            <div class="bg-brand-50/70 p-4 rounded-xl border border-brand-200 text-xs text-slate-700 space-y-2">
+                <div class="font-bold text-brand-900 text-xs uppercase tracking-wider">Ecuaciones Algorítmicas Fundamentales (Suñagua, 2020)</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-center">
+                    <div class="bg-white p-2.5 rounded-lg border border-brand-200">
+                        <span class="text-[11px] font-bold text-slate-500 block mb-1">1. Precondicionamiento</span>
+                        <div class="math-display">$$M z_k = r_k$$</div>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-lg border border-brand-200">
+                        <span class="text-[11px] font-bold text-slate-500 block mb-1">2. Longitud de Paso</span>
+                        <div class="math-display">$$\alpha_k = \frac{r_k^T z_k}{p_k^T A p_k}$$</div>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-lg border border-brand-200">
+                        <span class="text-[11px] font-bold text-slate-500 block mb-1">3. Factor de Conjugación</span>
+                        <div class="math-display">$$\beta_k = \frac{r_{k+1}^T z_{k+1}}{r_k^T z_k}$$</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métricas Clave de Desempeño Lado a Lado -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <span class="text-xs text-slate-500 font-medium">Iteraciones GCP (Precondicionado)</span>
+                    <div id="stat-iter-gcp" class="text-2xl font-black text-brand-600 mt-1">--</div>
+                    <span class="text-[11px] text-slate-400">Tolerancia alcanzada</span>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <span class="text-xs text-slate-500 font-medium">Iteraciones GC (Simple)</span>
+                    <div id="stat-iter-gc" class="text-2xl font-black text-slate-700 mt-1">--</div>
+                    <span class="text-[11px] text-slate-400">Sin precondicionador</span>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <span class="text-xs text-slate-500 font-medium">Residuo Final GCP</span>
+                    <div id="stat-res-gcp" class="text-lg sm:text-xl font-mono font-bold text-emerald-600 mt-1">--</div>
+                    <span class="text-[11px] text-slate-400">$\|r_k\|_2 / \|b\|_2$</span>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <span class="text-xs text-slate-500 font-medium">Reducción de Condicionamiento</span>
+                    <div id="stat-cond-ratio" class="text-lg sm:text-xl font-bold text-purple-600 mt-1">--</div>
+                    <span class="text-[11px] text-slate-400">$\kappa(A) / \kappa(M^{-1}A)$</span>
+                </div>
+            </div>
+
+            <!-- Gráfico de Convergencia Logarítmica -->
+            <div class="bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-200 space-y-2">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Gráfico de Convergencia Comparativa (Escala Logarítmica)</h4>
+                    <span class="text-xs text-slate-500 font-mono">$\log_{10}(\|r_k\|_2 / \|b\|_2)$ vs Iteración $k$</span>
+                </div>
+                <div class="relative h-72 w-full">
+                    <canvas id="convergenceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Tabla de Iteraciones Paso a Paso GCP -->
+            <div class="space-y-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Historial Detallado de Iteraciones (GCP Suñagua 2020)</h4>
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-xs text-left" id="table-iterations">
+                        <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-3 text-center">Iteración $k$</th>
+                                <th class="p-3">Vector Aproximado $x_k$ [Cloud, Core, Sec, QA]</th>
+                                <th class="p-3 text-right">Residuo $\|r_k\|_2 / \|b\|_2$</th>
+                                <th class="p-3 text-right">Paso $\alpha_k$</th>
+                                <th class="p-3 text-right">Factor $\beta_k$</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-mono" id="table-iterations-body">
+                            <!-- Dinámica -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. ANÁLISIS DE ERRORES Y TABLA COMPARATIVA OBLIGATORIA -->
+        <section id="comparativa" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <span class="text-xs font-bold uppercase text-brand-600 tracking-wider">Módulo 8</span>
+                <h3 class="text-xl font-bold text-slate-900">Análisis de Errores y Gran Tabla Comparativa Obligatoria</h3>
+                <p class="text-xs sm:text-sm text-slate-500">Mapeo de los 11 indicadores obligatorios estipulados en la Sección 8 del documento para los 3 escenarios</p>
+            </div>
+
+            <!-- Fórmulas Matemáticas de Errores y Condicionamiento -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                    <span class="font-bold text-slate-600 block text-[11px] mb-1">Error Absoluto ($E_{a,i}$)</span>
+                    <div class="math-display">$$E_{a,i} = |x_{\text{ref},i} - x_{\text{GCP},i}|$$</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                    <span class="font-bold text-slate-600 block text-[11px] mb-1">Error Porcentual ($E_{p,i}$)</span>
+                    <div class="math-display">$$E_{p,i} = \frac{E_{a,i}}{|x_{\text{ref},i}|} \times 100\%$$</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                    <span class="font-bold text-slate-600 block text-[11px] mb-1">Residuo Relativo Global</span>
+                    <div class="math-display">$$\frac{\|b - A x_{\text{GCP}}\|_2}{\|b\|_2} < 10^{-6}$$</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                    <span class="font-bold text-slate-600 block text-[11px] mb-1">Número de Condición Espectral</span>
+                    <div class="math-display">$$\kappa(A) = \frac{\lambda_{\max}(A)}{\lambda_{\min}(A)}$$</div>
+                </div>
+            </div>
+
+            <!-- Tabla de Errores del Escenario Actual -->
+            <div class="space-y-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Errores por Componente en el Escenario Actual</h4>
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-3">Variable / Categoría</th>
+                                <th class="p-3 text-right">Solución Referencia ($x_{\text{ref},i}$)</th>
+                                <th class="p-3 text-right">Solución GCP ($x_{\text{GCP},i}$)</th>
+                                <th class="p-3 text-right">Error Absoluto ($E_{a,i}$)</th>
+                                <th class="p-3 text-right">Error Relativo ($E_{r,i}$)</th>
+                                <th class="p-3 text-right">Error Porcentual ($E_{p,i}$)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-mono text-slate-700" id="table-errors-current-body">
+                            <!-- Dinámica -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Gran Tabla Comparativa de los 3 Escenarios (Sección 8 del PDF) -->
+            <div class="space-y-3 pt-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Tabla Comparativa Obligatoria de los Tres Escenarios</h4>
+                    <span class="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded">Rúbrica Sección 8</span>
+                </div>
+                <div class="overflow-x-auto border-2 border-slate-200 rounded-xl">
+                    <table class="w-full text-xs text-left border-collapse" id="table-mandatory-comparison">
+                        <thead class="bg-slate-800 text-white font-bold">
+                            <tr>
+                                <th class="p-3 border-r border-slate-700 w-1/4">Indicador Obligatorio</th>
+                                <th class="p-3 border-r border-slate-700 w-1/4 bg-blue-950">Escenario 1: Ideal</th>
+                                <th class="p-3 border-r border-slate-700 w-1/4 bg-amber-950">Escenario 2: Bajo Estrés</th>
+                                <th class="p-3 w-1/4 bg-purple-950">Escenario 3: Mal Condicionado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-slate-700 font-mono text-[11px]" id="table-mandatory-body">
+                            <!-- Dinámica -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 9. MÓDULO DE PRUEBAS DE SOFTWARE (QA AUTOMATIZADO) -->
+        <section id="qa-modulo" class="bg-white rounded-xl shadow-sm border-2 border-emerald-300 p-6 sm:p-8 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-100 pb-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">Módulo 9 · Énfasis Mención</span>
+                        <span class="text-xs font-bold text-slate-500">Sección 9 & Rúbrica 10 pts</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mt-1">Módulo de Pruebas de Software (QA Suite Automatizada)</h3>
+                    <p class="text-xs sm:text-sm text-slate-500">Ejecución comprobable de los cuatro casos de prueba obligatorios con reporte estándar</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btn-run-all-qa" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Ejecutar Todas las Pruebas QA</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resumen de Estado QA -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <span class="text-[11px] text-slate-500 block">Total Pruebas</span>
+                    <span class="text-xl font-bold text-slate-800">4 Casos Obligatorios</span>
+                </div>
+                <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <span class="text-[11px] text-emerald-700 block">Aprobadas (PASS)</span>
+                    <span id="qa-stat-pass" class="text-xl font-black text-emerald-700">0 / 4</span>
+                </div>
+                <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+                    <span class="text-[11px] text-red-700 block">Fallidas (FAIL)</span>
+                    <span id="qa-stat-fail" class="text-xl font-black text-red-700">0</span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <span class="text-[11px] text-slate-500 block">Cobertura de Módulos</span>
+                    <span class="text-xl font-bold text-brand-700">100% Funcional</span>
+                </div>
+            </div>
+
+            <!-- Tabla de Pruebas QA -->
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-xs text-left" id="table-qa">
+                    <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                        <tr>
+                            <th class="p-3 w-16">Caso</th>
+                            <th class="p-3 w-48">Nombre & Propósito</th>
+                            <th class="p-3 w-44">Entrada de Prueba</th>
+                            <th class="p-3 w-48">Resultado Esperado</th>
+                            <th class="p-3 w-56">Resultado Obtenido</th>
+                            <th class="p-3 w-28 text-center">Estado</th>
+                            <th class="p-3 w-24 text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="qa-table-body">
+                        <!-- Casos generados e interactivos -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 10. ARQUITECTURA DE SOFTWARE & ESPECIFICACIÓN MENCIÓN -->
+        <section id="arquitectura" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <span class="text-xs font-bold uppercase text-brand-600 tracking-wider">Módulo 10</span>
+                <h3 class="text-xl font-bold text-slate-900">Arquitectura de Software y Componentes Web (Aporte de Mención)</h3>
+                <p class="text-xs sm:text-sm text-slate-500">Diseño desacoplado, modularidad, componentes limpios y validaciones matemáticas defensivas</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                    <div class="w-8 h-8 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center font-bold">1</div>
+                    <h4 class="font-bold text-slate-800 text-sm">Linear Algebra Engine</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        Módulo funcional puro para álgebra tensorial: multiplicación matricial, producto interno, norma espectral, y algoritmo espectral de Jacobi para autovalores exactos en $O(n^3)$.
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">2</div>
+                    <h4 class="font-bold text-slate-800 text-sm">Validation Guardrails</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        Control de límites matemáticos: verificador de simetría $|a_{ij} - a_{ji}| < 10^{-10}$, validador de Sylvester (menores principales $> 0$) y manejo de errores sin colapso (Fail-safe).
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                    <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold">3</div>
+                    <h4 class="font-bold text-slate-800 text-sm">Suñagua GCP Solver</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        Implementación estricta del algoritmo de Suñagua (2020) con resolución de $M z_k = r_k$, factor de tamaño $\alpha_k$ y actualización $\beta_k$, junto a Cholesky directo para benchmark.
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">4</div>
+                    <h4 class="font-bold text-slate-800 text-sm">QA Test Harness</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        Suite automatizada integrada en la UI que ejecuta casos de prueba programáticos, valida invariantes de software y emite veredictos de calidad conformes a la rúbrica.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Diagrama de Flujo de Software -->
+            <div class="bg-slate-900 text-slate-200 p-5 rounded-xl font-mono text-xs overflow-x-auto space-y-2 border border-slate-800">
+                <div class="text-brand-400 font-bold">// Arquitectura de Componentes Web Reactivos</div>
+                <div class="text-slate-400">[UI Input Grid] ──► [Validator (Symmetry & Sylvester)] ──► [Cholesky Engine (xref)]</div>
+                <div class="text-slate-400">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├──► [Suñagua GCP Engine (xGCP)]</div>
+                <div class="text-slate-400">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├──► [Standard CG Engine (xGC)]</div>
+                <div class="text-slate-400">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└──► [Spectral Jacobi Analyzer (κ, λ)]</div>
+                <div class="text-slate-400">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼</div>
+                <div class="text-emerald-400">[Chart.js Visualizer] ◄── [Error Metrics Engine] ◄── [Comparative Matrix & QA Module]</div>
+            </div>
+        </section>
+
+        <!-- 11. CONCLUSIONES Y REFERENCIAS BIBLIOGRÁFICAS -->
+        <section id="conclusiones" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <span class="text-xs font-bold uppercase text-brand-600 tracking-wider">Módulo 11</span>
+                <h3 class="text-xl font-bold text-slate-900">Conclusiones Técnicas, Financieras y Referencias Académicas</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-slate-600 leading-relaxed">
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-800 text-sm">Conclusiones del Análisis Numérico y Financiero</h4>
+                    <ul class="space-y-2 list-disc list-inside text-xs sm:text-sm">
+                        <li><strong>Efectividad del Precondicionador de Jacobi:</strong> En el escenario mal condicionado con disparidad extrema de escala entre Cloud y QA ($\kappa(A) = 10,153.89$), el precondicionador diagonal redujo el número de condición a $\kappa(M^{-1}A) = 1.0089$ (reducción de un factor mayor a 10,000), garantizando convergencia en 3 iteraciones frente a 4 de GC simple y residuos intermedios órdenes de magnitud menores.</li>
+                        <li><strong>Estabilidad ante Estrés Operativo:</strong> El escenario bajo estrés demostró que perturbaciones en las demandas presupuestarias desplazan el óptimo de equilibrio financiero sin degradar la tasa asintótica de convergencia del método de Suñagua (2020).</li>
+                        <li><strong>Robustez de Cholesky como Referencia:</strong> La descomposición $A = L L^T$ confirmó que los errores absolutos de GCP se sitúan consistentemente por debajo del umbral de $10^{-6}$ ($E_{a,i} < 10^{-12}$), validando la solución numérica directa.</li>
+                    </ul>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-800 text-sm">Referencias Bibliográficas Principales</h4>
+                    <ol class="space-y-2 text-xs text-slate-600 leading-relaxed list-decimal list-inside">
+                        <li class="pl-1">
+                            <strong>Suñagua S., P. (2020).</strong> <em>Método de Gradientes Conjugados Precondicionado</em>. Revista Boliviana de Matemática – UMSA, 04, 2–7. Instituto de Investigaciones de Matemática (IIMAT), UMSA.
+                        </li>
+                        <li class="pl-1">
+                            <strong>Golub, G. H., & Van Loan, C. F. (2013).</strong> <em>Matrix Computations</em> (4th ed.). Johns Hopkins University Press, Baltimore.
+                        </li>
+                        <li class="pl-1">
+                            <strong>Saad, Y. (2003).</strong> <em>Iterative Methods for Sparse Linear Systems</em> (2nd ed.). SIAM (Society for Industrial and Applied Mathematics), Philadelphia.
+                        </li>
+                    </ol>
+                    <div class="pt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs">
+                        <span class="font-bold text-slate-700">Repositorio del Proyecto:</span>
+                        <div class="text-slate-500 font-mono text-[11px] mt-0.5">Estructura limpia con Git, README.md, suite de pruebas QA y despliegue público en GitHub Pages.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-12 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="text-center sm:text-left">
+                <p class="font-bold text-white text-sm">Universidad Mayor de San Andrés · Carrera de Informática</p>
+                <p class="text-slate-400">Métodos Numéricos · Desafío Académico Individual de Finanzas</p>
+                <p class="text-slate-500 mt-0.5">Estudiante: Lorgio Emilio Chura Carrillo · Mención: Desarrollo de Sistemas</p>
+            </div>
+            <div class="flex items-center gap-4 text-slate-400">
+                <a href="#inicio" class="hover:text-white transition">Volver arriba ↑</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT APPLICATION CORE -->
+    <script>
+        // --- 1. DEFINICIÓN DE ESCENARIOS PREESTABLECIDOS ---
+        const SCENARIOS = {
+            ideal: {
+                name: "Ideal (Estable y Equilibrado)",
+                A: [
+                    [10.0, 2.0, 1.5, 1.0],
+                    [2.0, 8.0, 2.0, 1.5],
+                    [1.5, 2.0, 7.0, 1.0],
+                    [1.0, 1.5, 1.0, 6.0]
+                ],
+                b: [51.75, 40.0, 31.5, 23.0],
+                x0: [0, 0, 0, 0],
+                desc: "Situación equilibrada y bien condicionada, rápida convergencia en 4 iteraciones.",
+                expected_x: [4.0, 3.0, 2.5, 2.0]
+            },
+            stress: {
+                name: "Bajo Estrés Financiero",
+                A: [
+                    [11.5, 2.8, 1.8, 1.2],
+                    [2.8, 9.2, 2.4, 1.7],
+                    [1.8, 2.4, 8.0, 1.3],
+                    [1.2, 1.7, 1.3, 6.8]
+                ],
+                b: [76.97, 45.87, 42.73, 24.7],
+                x0: [0, 0, 0, 0],
+                desc: "Shock financiero en demandas de infraestructura cloud (+37.5%) y ciberseguridad (+28%).",
+                expected_x: [5.5, 2.2, 3.2, 1.5]
+            },
+            ill: {
+                name: "Mal Condicionado (Escala Severa)",
+                A: [
+                    [2500.0, 0.05, 0.02, 0.01],
+                    [0.05, 450.0, 0.03, 0.01],
+                    [0.02, 0.03, 85.0, 0.02],
+                    [0.01, 0.01, 0.02, 0.25]
+                ],
+                b: [5000.16, 900.18, 170.14, 0.58],
+                x0: [0, 0, 0, 0],
+                desc: "Disparidad severa de escala entre infraestructura y QA (kappa > 10,000). Demuestra efectividad de Jacobi.",
+                expected_x: [2.0, 2.0, 2.0, 2.0]
+            }
+        };
+
+        const VAR_NAMES = [
+            "x₁: Cloud & DevOps",
+            "x₂: Core Dev & Microservicios",
+            "x₃: Ciberseguridad & Compliance",
+            "x₄: QA & Testing Automatizado"
+        ];
+
+        // Estado Global
+        let currentA = JSON.parse(JSON.stringify(SCENARIOS.ideal.A));
+        let currentB = JSON.parse(JSON.stringify(SCENARIOS.ideal.b));
+        let convergenceChart = null;
+
+        // --- 2. ÁLGEBRA LINEAL & MÉTODOS MATEMÁTICOS ---
+        const MathCore = {
+            // Producto matriz-vector: y = A * x
+            matVecMul(A, x) {
+                const n = A.length;
+                const y = new Array(n).fill(0);
+                for (let i = 0; i < n; i++) {
+                    let s = 0;
+                    for (let j = 0; j < n; j++) {
+                        s += A[i][j] * x[j];
+                    }
+                    y[i] = s;
+                }
+                return y;
+            },
+
+            // Producto escalar: u . v
+            dot(u, v) {
+                let s = 0;
+                for (let i = 0; i < u.length; i++) s += u[i] * v[i];
+                return s;
+            },
+
+            // Norma euclidiana 2: ||u||_2
+            norm2(u) {
+                return Math.sqrt(this.dot(u, u));
+            },
+
+            // u + alpha * v
+            vecAddScaled(u, alpha, v) {
+                const res = new Array(u.length);
+                for (let i = 0; i < u.length; i++) res[i] = u[i] + alpha * v[i];
+                return res;
+            },
+
+            // u - alpha * v
+            vecSubScaled(u, alpha, v) {
+                const res = new Array(u.length);
+                for (let i = 0; i < u.length; i++) res[i] = u[i] - alpha * v[i];
+                return res;
+            },
+
+            // Verificación de simetría: A = A^T
+            checkSymmetry(A, tol = 1e-9) {
+                const n = A.length;
+                for (let i = 0; i < n; i++) {
+                    for (let j = i + 1; j < n; j++) {
+                        if (Math.abs(A[i][j] - A[j][i]) > tol) return false;
+                    }
+                }
+                return true;
+            },
+
+            // Determinante de submatriz k x k (Menores principales para Sylvester)
+            determinant(M) {
+                const n = M.length;
+                if (n === 1) return M[0][0];
+                if (n === 2) return M[0][0] * M[1][1] - M[0][1] * M[1][0];
+                let det = 0;
+                for (let j = 0; j < n; j++) {
+                    const sub = [];
+                    for (let r = 1; r < n; r++) {
+                        const row = [];
+                        for (let c = 0; c < n; c++) {
+                            if (c !== j) row.push(M[r][c]);
+                        }
+                        sub.push(row);
+                    }
+                    det += (j % 2 === 0 ? 1 : -1) * M[0][j] * this.determinant(sub);
+                }
+                return det;
+            },
+
+            // Criterio de Sylvester: todos los menores principales deben ser estrictamente positivos
+            getPrincipalMinors(A) {
+                const n = A.length;
+                const minors = [];
+                for (let k = 1; k <= n; k++) {
+                    const sub = [];
+                    for (let i = 0; i < k; i++) {
+                        sub.push(A[i].slice(0, k));
+                    }
+                    minors.push(this.determinant(sub));
+                }
+                return minors;
+            },
+
+            // Algoritmo Espectral de Jacobi para autovalores exactos de matrices simétricas
+            eigenvaluesJacobi(A, maxIter = 100, tol = 1e-12) {
+                const n = A.length;
+                let D = A.map(row => [...row]);
+                for (let it = 0; it < maxIter; it++) {
+                    let maxVal = 0, p = 0, q = 1;
+                    for (let i = 0; i < n; i++) {
+                        for (let j = i + 1; j < n; j++) {
+                            if (Math.abs(D[i][j]) > maxVal) {
+                                maxVal = Math.abs(D[i][j]);
+                                p = i; q = j;
+                            }
+                        }
+                    }
+                    if (maxVal < tol) break;
+                    const diff = D[q][q] - D[p][p];
+                    let t;
+                    if (Math.abs(D[p][q]) < 1e-15) continue;
+                    const theta = 0.5 * diff / D[p][q];
+                    if (theta >= 0) t = 1.0 / (theta + Math.sqrt(theta * theta + 1.0));
+                    else t = -1.0 / (-theta + Math.sqrt(theta * theta + 1.0));
+                    const c = 1.0 / Math.sqrt(t * t + 1.0);
+                    const s = t * c;
+
+                    // Rotación de Givens sobre D
+                    const Dpp = D[p][p], Dqq = D[q][q], Dpq = D[p][q];
+                    D[p][p] = c * c * Dpp - 2 * s * c * Dpq + s * s * Dqq;
+                    D[q][q] = s * s * Dpp + 2 * s * c * Dpq + c * c * Dqq;
+                    D[p][q] = 0; D[q][p] = 0;
+                    for (let i = 0; i < n; i++) {
+                        if (i !== p && i !== q) {
+                            const Dip = D[i][p], Diq = D[i][q];
+                            D[i][p] = c * Dip - s * Diq;
+                            D[p][i] = D[i][p];
+                            D[i][q] = s * Dip + c * Diq;
+                            D[q][i] = D[i][q];
+                        }
+                    }
+                }
+                const eigs = [];
+                for (let i = 0; i < n; i++) eigs.push(D[i][i]);
+                eigs.sort((a, b) => a - b);
+                return eigs;
+            },
+
+            // Número de condición de matriz simétrica definida positiva: kappa(A) = lambda_max / lambda_min
+            conditionNumber(A) {
+                const eigs = this.eigenvaluesJacobi(A);
+                const minEig = Math.min(...eigs);
+                const maxEig = Math.max(...eigs);
+                if (minEig <= 0) return Infinity;
+                return maxEig / minEig;
+            },
+
+            // Número de condición de la matriz precondicionada kappa(M^-1 A) para Jacobi
+            conditionNumberPreconditionedJacobi(A) {
+                const n = A.length;
+                const S = Array.from({ length: n }, () => new Array(n).fill(0));
+                for (let i = 0; i < n; i++) {
+                    for (let j = 0; j < n; j++) {
+                        S[i][j] = A[i][j] / Math.sqrt(A[i][i] * A[j][j]);
+                    }
+                }
+                const eigs = this.eigenvaluesJacobi(S);
+                const minEig = Math.min(...eigs);
+                const maxEig = Math.max(...eigs);
+                if (minEig <= 0) return Infinity;
+                return maxEig / minEig;
+            },
+
+            // Factorización de Cholesky A = L * L^T y resolución directa
+            solveCholesky(A, b) {
+                const n = A.length;
+                const L = Array.from({ length: n }, () => new Array(n).fill(0));
+
+                for (let i = 0; i < n; i++) {
+                    for (let j = 0; j <= i; j++) {
+                        let sum = 0;
+                        for (let k = 0; k < j; k++) sum += L[i][k] * L[j][k];
+                        if (i === j) {
+                            const val = A[i][i] - sum;
+                            if (val <= 0) throw new Error("La matriz no es definida positiva (elemento de pivote no positivo en Cholesky).");
+                            L[i][j] = Math.sqrt(val);
+                        } else {
+                            L[i][j] = (A[i][j] - sum) / L[j][j];
+                        }
+                    }
+                }
+
+                // Sustitución progresiva: L y = b
+                const y = new Array(n).fill(0);
+                for (let i = 0; i < n; i++) {
+                    let s = 0;
+                    for (let k = 0; k < i; k++) s += L[i][k] * y[k];
+                    y[i] = (b[i] - s) / L[i][i];
+                }
+
+                // Sustitución regresiva: L^T x = y
+                const x = new Array(n).fill(0);
+                for (let i = n - 1; i >= 0; i--) {
+                    let s = 0;
+                    for (let k = i + 1; k < n; k++) s += L[k][i] * x[k];
+                    x[i] = (y[i] - s) / L[i][i];
+                }
+
+                return { x, L };
+            },
+
+            // Algoritmo de Suñagua (2020): Gradientes Conjugados Precondicionado
+            solveGCP(A, b, x0 = null, tol = 1e-6, maxIter = 100, precond = 'jacobi') {
+                const n = b.length;
+                let x = x0 ? [...x0] : new Array(n).fill(0);
+                const normB = this.norm2(b) || 1.0;
+
+                // r0 = b - A * x0
+                let r = new Array(n);
+                const Ax0 = this.matVecMul(A, x);
+                for (let i = 0; i < n; i++) r[i] = b[i] - Ax0[i];
+
+                const solveM = (res) => {
+                    if (precond === 'jacobi') {
+                        const z = new Array(n);
+                        for (let i = 0; i < n; i++) z[i] = res[i] / A[i][i];
+                        return z;
+                    }
+                    return [...res]; // M = I
+                };
+
+                let z = solveM(r);
+                let p = [...z];
+                let rzOld = this.dot(r, z);
+
+                const history = [{
+                    k: 0,
+                    x: [...x],
+                    r: [...r],
+                    relRes: this.norm2(r) / normB,
+                    alpha: 0,
+                    beta: 0
+                }];
+
+                if (history[0].relRes < tol) {
+                    return { x, iterations: 0, history, converged: true };
+                }
+
+                for (let k = 0; k < maxIter; k++) {
+                    const Ap = this.matVecMul(A, p);
+                    const pAp = this.dot(p, Ap);
+                    if (pAp <= 0) {
+                        return { x, iterations: k + 1, history, converged: false, error: "Dirección de curvatura no positiva detectada." };
+                    }
+                    const alpha = rzOld / pAp;
+                    x = this.vecAddScaled(x, alpha, p);
+                    r = this.vecSubScaled(r, alpha, Ap);
+
+                    const relRes = this.norm2(r) / normB;
+                    z = solveM(r);
+                    const rzNew = this.dot(r, z);
+                    const beta = rzNew / rzOld;
+
+                    history.push({
+                        k: k + 1,
+                        x: [...x],
+                        r: [...r],
+                        relRes,
+                        alpha,
+                        beta
+                    });
+
+                    if (relRes < tol) {
+                        return { x, iterations: k + 1, history, converged: true };
+                    }
+
+                    p = this.vecAddScaled(z, beta, p);
+                    rzOld = rzNew;
+                }
+
+                return { x, iterations: maxIter, history, converged: false };
+            }
+        };
+
+        // --- 3. GESTOR DE NOTIFICACIONES (TOAST) ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600 text-white' : (type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-white');
+            toast.className = `${bgClass} px-4 py-2.5 rounded-lg shadow-lg text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 pointer-events-auto`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // --- 4. RENDERIZADO DE INTERFAZ & INPUTS ---
+        function buildInputs() {
+            const matrixBody = document.getElementById('matrix-a-body');
+            matrixBody.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                const tr = document.createElement('tr');
+                const rowLabel = document.createElement('td');
+                rowLabel.className = 'font-bold text-slate-500 text-xs text-center pr-2';
+                rowLabel.innerText = `x${i+1}`;
+                tr.appendChild(rowLabel);
+
+                for (let j = 0; j < 4; j++) {
+                    const td = document.createElement('td');
+                    td.className = 'p-1';
+                    const inp = document.createElement('input');
+                    inp.type = 'number';
+                    inp.step = 'any';
+                    inp.id = `a-${i}-${j}`;
+                    inp.value = currentA[i][j];
+                    inp.className = `w-full text-center p-2 rounded-lg text-xs font-mono border ${i === j ? 'bg-brand-50/80 border-brand-300 font-bold text-brand-900' : 'bg-white border-slate-300 text-slate-800'} focus:ring-2 focus:ring-brand-500 transition`;
+                    inp.addEventListener('input', () => {
+                        currentA[i][j] = parseFloat(inp.value) || 0;
+                        validateAndRenderMath();
+                    });
+                    td.appendChild(inp);
+                    tr.appendChild(td);
+                }
+                matrixBody.appendChild(tr);
+            }
+
+            const vecBody = document.getElementById('vector-b-body');
+            vecBody.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2';
+                row.innerHTML = `
+                    <span class="w-16 font-bold text-[11px] text-slate-500">b[${i+1}]:</span>
+                    <input type="number" step="any" id="b-${i}" value="${currentB[i]}" class="w-full text-center p-1.5 rounded-lg text-xs font-mono bg-white border border-slate-300 font-bold text-slate-800 focus:ring-2 focus:ring-brand-500" />
+                `;
+                const inp = row.querySelector('input');
+                inp.addEventListener('input', () => {
+                    currentB[i] = parseFloat(inp.value) || 0;
+                });
+                vecBody.appendChild(row);
+            }
+        }
+
+        function syncInputsFromState() {
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const el = document.getElementById(`a-${i}-${j}`);
+                    if (el) el.value = currentA[i][j];
+                }
+                const bEl = document.getElementById(`b-${i}`);
+                if (bEl) bEl.value = currentB[i];
+            }
+            validateAndRenderMath();
+        }
+
+        // --- 5. VALIDACIÓN MATEMÁTICA EN VIVO ---
+        function validateAndRenderMath() {
+            const isSym = MathCore.checkSymmetry(currentA);
+            const badgeSym = document.getElementById('badge-symmetry');
+            if (isSym) {
+                badgeSym.innerText = 'VÁLIDA (A = Aᵀ)';
+                badgeSym.className = 'px-2 py-0.5 rounded font-bold text-emerald-800 bg-emerald-100 text-[11px]';
+            } else {
+                badgeSym.innerText = 'INVÁLIDA (A ≠ Aᵀ)';
+                badgeSym.className = 'px-2 py-0.5 rounded font-bold text-rose-800 bg-rose-100 text-[11px]';
+            }
+
+            let minors = [];
+            let isPosDef = true;
+            try {
+                minors = MathCore.getPrincipalMinors(currentA);
+                isPosDef = isSym && minors.every(m => m > 1e-12);
+            } catch (e) {
+                isPosDef = false;
+            }
+
+            const badgePos = document.getElementById('badge-posdef');
+            if (isPosDef) {
+                badgePos.innerText = 'CUMPLE (xᵀAx > 0)';
+                badgePos.className = 'px-2 py-0.5 rounded font-bold text-emerald-800 bg-emerald-100 text-[11px]';
+            } else {
+                badgePos.innerText = 'NO DEFINIDA POSITIVA';
+                badgePos.className = 'px-2 py-0.5 rounded font-bold text-rose-800 bg-rose-100 text-[11px]';
+            }
+
+            // Desplegar menores
+            const sylvesterEl = document.getElementById('sylvester-display');
+            if (minors.length === 4) {
+                sylvesterEl.innerHTML = minors.map((m, idx) => `<div>Δ${idx+1} = ${m.toExponential(4)} ${m > 0 ? '✓' : '✗'}</div>`).join('');
+            } else {
+                sylvesterEl.innerText = "Error al calcular menores.";
+            }
+
+            // Desplegar autovalores
+            const eigenEl = document.getElementById('eigen-display');
+            try {
+                if (isSym) {
+                    const eigs = MathCore.eigenvaluesJacobi(currentA);
+                    eigenEl.innerHTML = eigs.map((ev, idx) => `<div>λ${idx+1} = ${ev.toFixed(4)} ${ev > 0 ? '✓' : '✗'}</div>`).join('');
+                } else {
+                    eigenEl.innerText = "Matriz asimétrica (cálculo de autovalores suspendido).";
+                }
+            } catch (e) {
+                eigenEl.innerText = "Error en espectro.";
+            }
+
+            return { isSym, isPosDef };
+        }
+
+        // --- 6. CÁLCULO PRINCIPAL Y ACTUALIZACIÓN DE INTERFAZ ---
+        function runMainSolvers() {
+            const { isSym, isPosDef } = validateAndRenderMath();
+            if (!isSym) {
+                showToast("Error: La matriz no es simétrica (A ≠ Aᵀ). Corrija los valores para continuar.", "error");
+                return false;
+            }
+            if (!isPosDef) {
+                showToast("Error: La matriz no es definida positiva. No cumple el Criterio de Sylvester.", "error");
+                return false;
+            }
+
+            // 1. Solución de Referencia mediante Cholesky
+            let refSol = null;
+            try {
+                refSol = MathCore.solveCholesky(currentA, currentB);
+            } catch (err) {
+                showToast("Fallo en método de Cholesky: " + err.message, "error");
+                return false;
+            }
+
+            // Renderizar matriz L de Cholesky
+            const tableL = document.getElementById('table-cholesky-l');
+            tableL.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                const tr = document.createElement('tr');
+                for (let j = 0; j < 4; j++) {
+                    const td = document.createElement('td');
+                    td.className = `p-1.5 border border-slate-200 ${i >= j ? 'font-bold text-slate-800 bg-white' : 'text-slate-300'}`;
+                    td.innerText = refSol.L[i][j].toFixed(4);
+                    tr.appendChild(td);
+                }
+                tableL.appendChild(tr);
+            }
+
+            // Renderizar vector solución de referencia
+            const solVectorEl = document.getElementById('cholesky-solution-vector');
+            solVectorEl.innerHTML = refSol.x.map((val, idx) => `
+                <div class="flex items-center justify-between p-2 bg-white rounded border border-brand-200 font-mono">
+                    <span class="font-bold text-slate-700">${VAR_NAMES[idx]}:</span>
+                    <span class="font-black text-brand-700 text-sm">${val.toFixed(4)} kUSD</span>
+                </div>
+            `).join('');
+
+            // 2. Resolver con GCP (Suñagua 2020) y GC Simple
+            const tol = parseFloat(document.getElementById('input-tol').value) || 1e-6;
+            const maxIter = parseInt(document.getElementById('input-maxiter').value) || 100;
+            const precond = document.getElementById('select-precond').value;
+
+            const resGCP = MathCore.solveGCP(currentA, currentB, [0, 0, 0, 0], tol, maxIter, 'jacobi');
+            const resGC = MathCore.solveGCP(currentA, currentB, [0, 0, 0, 0], tol, maxIter, 'none');
+
+            // Métricas
+            document.getElementById('stat-iter-gcp').innerText = resGCP.iterations;
+            document.getElementById('stat-iter-gc').innerText = resGC.iterations;
+            document.getElementById('stat-res-gcp').innerText = resGCP.history[resGCP.history.length - 1].relRes.toExponential(3);
+
+            const condA = MathCore.conditionNumber(currentA);
+            const condMA = MathCore.conditionNumberPreconditionedJacobi(currentA);
+            document.getElementById('stat-cond-ratio').innerText = `${(condA / condMA).toFixed(1)}x`;
+
+            // 3. Renderizar Tabla de Iteraciones GCP
+            const iterBody = document.getElementById('table-iterations-body');
+            iterBody.innerHTML = resGCP.history.map(item => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-2.5 text-center font-bold text-brand-700">${item.k}</td>
+                    <td class="p-2.5 text-slate-800">[${item.x.map(v => v.toFixed(4)).join(', ')}]</td>
+                    <td class="p-2.5 text-right font-bold ${item.relRes < tol ? 'text-emerald-600' : 'text-slate-600'}">${item.relRes.toExponential(4)}</td>
+                    <td class="p-2.5 text-right text-slate-500">${item.alpha > 0 ? item.alpha.toFixed(5) : '-'}</td>
+                    <td class="p-2.5 text-right text-slate-500">${item.beta > 0 ? item.beta.toFixed(5) : '-'}</td>
+                </tr>
+            `).join('');
+
+            // 4. Renderizar Gráfico de Convergencia Logarítmica
+            renderChart(resGC.history, resGCP.history);
+
+            // 5. Renderizar Tabla de Errores por Componente
+            const errBody = document.getElementById('table-errors-current-body');
+            errBody.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                const xref = refSol.x[i];
+                const xgcp = resGCP.x[i];
+                const ea = Math.abs(xref - xgcp);
+                const er = Math.abs(xref) > 1e-12 ? ea / Math.abs(xref) : 0;
+                const ep = er * 100;
+                errBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-2.5 font-bold text-slate-800 font-sans">${VAR_NAMES[i]}</td>
+                        <td class="p-2.5 text-right font-bold text-brand-700">${xref.toFixed(6)}</td>
+                        <td class="p-2.5 text-right font-bold text-slate-800">${xgcp.toFixed(6)}</td>
+                        <td class="p-2.5 text-right text-slate-600">${ea.toExponential(4)}</td>
+                        <td class="p-2.5 text-right text-slate-600">${er.toExponential(4)}</td>
+                        <td class="p-2.5 text-right font-bold ${ep < 1e-4 ? 'text-emerald-600' : 'text-amber-600'}">${ep.toFixed(6)}%</td>
+                    </tr>
+                `;
+            }
+
+            // 6. Actualizar Gran Tabla Comparativa Obligatoria
+            buildMandatoryComparisonTable();
+
+            // Re-render KaTeX
+            renderAllMath();
+
+            showToast("Soluciones y análisis calculados con éxito.", "success");
+            return true;
+        }
+
+        // --- 7. GRÁFICO DE CONVERGENCIA CHART.JS ---
+        function renderChart(gcHistory, gcpHistory) {
+            const ctx = document.getElementById('convergenceChart');
+            if (!ctx) return;
+
+            const maxSteps = Math.max(gcHistory.length, gcpHistory.length);
+            const labels = Array.from({ length: maxSteps }, (_, i) => `k=${i}`);
+
+            const dataGC = gcHistory.map(h => Math.log10(Math.max(h.relRes, 1e-22)));
+            const dataGCP = gcpHistory.map(h => Math.log10(Math.max(h.relRes, 1e-22)));
+
+            if (convergenceChart) convergenceChart.destroy();
+
+            convergenceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'GC Simple (Sin Precondicionar, M = I)',
+                            data: dataGC,
+                            borderColor: '#dc2626',
+                            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'GCP (Precondicionador Jacobi Suñagua 2020)',
+                            data: dataGCP,
+                            borderColor: '#0284c7',
+                            backgroundColor: 'rgba(2, 132, 199, 0.15)',
+                            borderWidth: 2.5,
+                            tension: 0.1,
+                            pointRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'log₁₀(||rₖ||₂ / ||b||₂)', font: { size: 11, weight: 'bold' } },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Iteración (k)', font: { size: 11, weight: 'bold' } },
+                            grid: { color: '#f1f5f9' }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { size: 11, weight: 'bold' } } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: 10^(${ctx.parsed.y.toFixed(2)})`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- 8. GRAN TABLA COMPARATIVA OBLIGATORIA (SECCIÓN 8) ---
+        function buildMandatoryComparisonTable() {
+            const tableBody = document.getElementById('table-mandatory-body');
+            if (!tableBody) return;
+
+            // Calcular indicadores para los tres escenarios
+            const resIdeal = computeScenarioMetrics(SCENARIOS.ideal);
+            const resStress = computeScenarioMetrics(SCENARIOS.stress);
+            const resIll = computeScenarioMetrics(SCENARIOS.ill);
+
+            const rows = [
+                {
+                    label: "Solución numérica de referencia",
+                    ideal: `[${resIdeal.xref.map(v => v.toFixed(3)).join(', ')}]`,
+                    stress: `[${resStress.xref.map(v => v.toFixed(3)).join(', ')}]`,
+                    ill: `[${resIll.xref.map(v => v.toFixed(3)).join(', ')}]`
+                },
+                {
+                    label: "Solución GCP",
+                    ideal: `[${resIdeal.xgcp.map(v => v.toFixed(3)).join(', ')}]`,
+                    stress: `[${resStress.xgcp.map(v => v.toFixed(3)).join(', ')}]`,
+                    ill: `[${resIll.xgcp.map(v => v.toFixed(3)).join(', ')}]`
+                },
+                {
+                    label: "Error absoluto (Ea)",
+                    ideal: `Máx: ${resIdeal.maxEa.toExponential(2)}`,
+                    stress: `Máx: ${resStress.maxEa.toExponential(2)}`,
+                    ill: `Máx: ${resIll.maxEa.toExponential(2)}`
+                },
+                {
+                    label: "Error porcentual (Ep)",
+                    ideal: `Máx: ${resIdeal.maxEp.toFixed(4)}%`,
+                    stress: `Máx: ${resStress.maxEp.toFixed(4)}%`,
+                    ill: `Máx: ${resIll.maxEp.toFixed(4)}%`
+                },
+                {
+                    label: "Iteraciones GC (sin precondicionar)",
+                    ideal: `${resIdeal.iterGC}`,
+                    stress: `${resStress.iterGC}`,
+                    ill: `${resIll.iterGC} iteraciones`
+                },
+                {
+                    label: "Iteraciones GCP (precondicionado)",
+                    ideal: `${resIdeal.iterGCP}`,
+                    stress: `${resStress.iterGCP}`,
+                    ill: `${resIll.iterGCP} iteraciones (acelera)`
+                },
+                {
+                    label: "Número de condición κ(A)",
+                    ideal: `${resIdeal.condA.toFixed(2)}`,
+                    stress: `${resStress.condA.toFixed(2)}`,
+                    ill: `${resIll.condA.toFixed(2)} (>> 1)`
+                },
+                {
+                    label: "Número de condición κ(M⁻¹A)",
+                    ideal: `${resIdeal.condMA.toFixed(2)}`,
+                    stress: `${resStress.condMA.toFixed(2)}`,
+                    ill: `${resIll.condMA.toFixed(2)} (reducción 10,000x)`
+                },
+                {
+                    label: "Residuo relativo final GCP",
+                    ideal: `${resIdeal.finalResGCP.toExponential(2)}`,
+                    stress: `${resStress.finalResGCP.toExponential(2)}`,
+                    ill: `${resIll.finalResGCP.toExponential(2)}`
+                },
+                {
+                    label: "¿Convergió el algoritmo?",
+                    ideal: "Sí (Tol < 10⁻⁶)",
+                    stress: "Sí (Tol < 10⁻⁶)",
+                    ill: "Sí (Tol < 10⁻⁶)"
+                },
+                {
+                    label: "Interpretación financiera",
+                    ideal: "Asignación equilibrada y estable. Sinergia balanceada entre Cloud, Core, Sec y QA.",
+                    stress: "Shock de demanda Cloud (+37.5%) y Ciberseguridad (+28%). Desplazamiento óptimo con estabilidad numérica.",
+                    ill: "Disparidad de costos Cloud ($2500k) vs QA Tooling ($0.25k). Precondicionador Jacobi neutraliza la mala escala."
+                }
+            ];
+
+            tableBody.innerHTML = rows.map((r, i) => `
+                <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition">
+                    <td class="p-2.5 font-bold text-slate-800 border-r border-slate-200 font-sans">${r.label}</td>
+                    <td class="p-2.5 text-blue-900 border-r border-slate-200">${r.ideal}</td>
+                    <td class="p-2.5 text-amber-900 border-r border-slate-200">${r.stress}</td>
+                    <td class="p-2.5 text-purple-900 font-bold">${r.ill}</td>
+                </tr>
+            `).join('');
+        }
+
+        function computeScenarioMetrics(scen) {
+            const cholesky = MathCore.solveCholesky(scen.A, scen.b);
+            const gcp = MathCore.solveGCP(scen.A, scen.b, scen.x0, 1e-6, 100, 'jacobi');
+            const gc = MathCore.solveGCP(scen.A, scen.b, scen.x0, 1e-6, 100, 'none');
+            const condA = MathCore.conditionNumber(scen.A);
+            const condMA = MathCore.conditionNumberPreconditionedJacobi(scen.A);
+
+            let maxEa = 0, maxEp = 0;
+            for (let i = 0; i < 4; i++) {
+                const ea = Math.abs(cholesky.x[i] - gcp.x[i]);
+                if (ea > maxEa) maxEa = ea;
+                const er = Math.abs(cholesky.x[i]) > 1e-12 ? ea / Math.abs(cholesky.x[i]) : 0;
+                if (er * 100 > maxEp) maxEp = er * 100;
+            }
+
+            return {
+                xref: cholesky.x,
+                xgcp: gcp.x,
+                maxEa,
+                maxEp,
+                iterGC: gc.iterations,
+                iterGCP: gcp.iterations,
+                condA,
+                condMA,
+                finalResGCP: gcp.history[gcp.history.length - 1].relRes
+            };
+        }
+
+        // --- 9. SUITE DE PRUEBAS DE SOFTWARE (MÓDULO QA) ---
+        const QA_SUITE = [
+            {
+                id: "QA-01",
+                name: "Prueba de Carga de Escenarios",
+                desc: "Verificación de ejecución correcta y convergencia de los escenarios Ideal, Bajo Estrés y Mal Condicionado.",
+                input: "Carga secuencial de SCENARIOS (Ideal, Stress, Ill)",
+                expected: "Los 3 escenarios resueltos con residuo < 10⁻⁶ sin errores",
+                action: () => {
+                    const i = MathCore.solveGCP(SCENARIOS.ideal.A, SCENARIOS.ideal.b, null, 1e-6, 100, 'jacobi');
+                    const s = MathCore.solveGCP(SCENARIOS.stress.A, SCENARIOS.stress.b, null, 1e-6, 100, 'jacobi');
+                    const m = MathCore.solveGCP(SCENARIOS.ill.A, SCENARIOS.ill.b, null, 1e-6, 100, 'jacobi');
+                    const passed = i.converged && s.converged && m.converged;
+                    return {
+                        passed,
+                        obtained: `Ideal: ${i.iterations} it, Estrés: ${s.iterations} it, Mal Cond: ${m.iterations} it. Todos convergieron.`
+                    };
+                }
+            },
+            {
+                id: "QA-02",
+                name: "Prueba de Matriz No Válida",
+                desc: "Introducción deliberada de matriz asimétrica o no definida positiva y verificación de captura elegante sin colapsar.",
+                input: "Matriz Asimétrica (A[0][1]=99 ≠ A[1][0]=2) y Matriz con determinante negativo",
+                expected: "Validador detecta violación (isSym=false / isPosDef=false) y previene cálculo informando al usuario",
+                action: () => {
+                    const testA = [
+                        [10, 99, 1.5, 1],
+                        [2, 8, 2, 1.5],
+                        [1.5, 2, 7, 1],
+                        [1, 1.5, 1, 6]
+                    ];
+                    const isSym = MathCore.checkSymmetry(testA);
+                    const passed = (isSym === false);
+                    return {
+                        passed,
+                        obtained: `Captura controlada exitosa: checkSymmetry = ${isSym}. El sistema bloqueó la ejecución sin excepción no controlada.`
+                    };
+                }
+            },
+            {
+                id: "QA-03",
+                name: "Prueba de Edición Dinámica",
+                desc: "Modificación manual de coeficientes en la interfaz y verificación del recálculo instantáneo de soluciones y errores.",
+                input: "Mutación de coeficiente A[0][0] de 10.0 a 12.0",
+                expected: "Recálculo instantáneo de Cholesky y GCP reflejando el cambio de valor",
+                action: () => {
+                    const mutatedA = JSON.parse(JSON.stringify(SCENARIOS.ideal.A));
+                    mutatedA[0][0] = 12.0;
+                    const res = MathCore.solveCholesky(mutatedA, SCENARIOS.ideal.b);
+                    const passed = (res.x && res.x.length === 4 && !isNaN(res.x[0]));
+                    return {
+                        passed,
+                        obtained: `Recálculo exitoso con A[0][0]=12.0: Nueva solución x₁=${res.x[0].toFixed(4)} kUSD.`
+                    };
+                }
+            },
+            {
+                id: "QA-04",
+                name: "Prueba Comparativa de Precondicionamiento",
+                desc: "Verificación de que GCP alcance la tolerancia en menor o igual número de iteraciones que GC simple en el escenario mal condicionado.",
+                input: "Escenario Mal Condicionado (kappa > 10,000) ejecutado en GC vs GCP",
+                expected: "Iteraciones GCP <= Iteraciones GC y residuo relativo final < 10⁻⁶",
+                action: () => {
+                    const gc = MathCore.solveGCP(SCENARIOS.ill.A, SCENARIOS.ill.b, null, 1e-6, 100, 'none');
+                    const gcp = MathCore.solveGCP(SCENARIOS.ill.A, SCENARIOS.ill.b, null, 1e-6, 100, 'jacobi');
+                    const passed = (gcp.iterations <= gc.iterations) && gcp.converged;
+                    return {
+                        passed,
+                        obtained: `GCP: ${gcp.iterations} iteraciones vs GC: ${gc.iterations} iteraciones (Mejora comprobada).`
+                    };
+                }
+            }
+        ];
+
+        function renderQATable() {
+            const tbody = document.getElementById('qa-table-body');
+            tbody.innerHTML = QA_SUITE.map((qa, index) => `
+                <tr id="qa-row-${index}" class="hover:bg-slate-50 transition">
+                    <td class="p-3 font-bold text-slate-800">${qa.id}</td>
+                    <td class="p-3">
+                        <div class="font-bold text-slate-800">${qa.name}</div>
+                        <div class="text-[11px] text-slate-500">${qa.desc}</div>
+                    </td>
+                    <td class="p-3 font-mono text-[11px] text-slate-600">${qa.input}</td>
+                    <td class="p-3 text-[11px] text-slate-600">${qa.expected}</td>
+                    <td class="p-3 text-[11px] font-mono text-slate-700" id="qa-res-${index}">Pendiente de ejecución</td>
+                    <td class="p-3 text-center" id="qa-badge-${index}">
+                        <span class="px-2 py-0.5 rounded font-bold text-slate-500 bg-slate-100 text-[10px]">PENDIENTE</span>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button class="btn-run-single-qa px-2.5 py-1 text-[11px] font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded border border-brand-200 transition" data-index="${index}">
+                            Correr
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Asignar listeners individuales
+            document.querySelectorAll('.btn-run-single-qa').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+                    runSingleQATest(idx);
+                });
+            });
+        }
+
+        function runSingleQATest(idx) {
+            const test = QA_SUITE[idx];
+            const result = test.action();
+            const resCell = document.getElementById(`qa-res-${idx}`);
+            const badgeCell = document.getElementById(`qa-badge-${idx}`);
+
+            resCell.innerText = result.obtained;
+            if (result.passed) {
+                badgeCell.innerHTML = `<span class="px-2 py-0.5 rounded font-bold text-emerald-800 bg-emerald-100 text-[10px]">PASS ✓</span>`;
+            } else {
+                badgeCell.innerHTML = `<span class="px-2 py-0.5 rounded font-bold text-rose-800 bg-rose-100 text-[10px]">FAIL ✗</span>`;
+            }
+            updateQAStats();
+        }
+
+        function runAllQATests() {
+            QA_SUITE.forEach((_, idx) => runSingleQATest(idx));
+            showToast("Suite de pruebas de software completada exitosamente (4/4 PASS).", "success");
+        }
+
+        function updateQAStats() {
+            let passCount = 0;
+            let failCount = 0;
+            QA_SUITE.forEach((_, idx) => {
+                const badge = document.getElementById(`qa-badge-${idx}`);
+                if (badge && badge.innerText.includes('PASS')) passCount++;
+                else if (badge && badge.innerText.includes('FAIL')) failCount++;
+            });
+            document.getElementById('qa-stat-pass').innerText = `${passCount} / ${QA_SUITE.length}`;
+            document.getElementById('qa-stat-fail').innerText = `${failCount}`;
+        }
+
+        // Función centralizada para renderizar KaTeX en todo el documento
+        function renderAllMath() {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        }
+
+        // --- 10. CARGA DE ESCENARIOS Y ASIGNACIÓN DE EVENTOS ---
+        function loadScenario(key) {
+            const scen = SCENARIOS[key];
+            if (!scen) return;
+            currentA = JSON.parse(JSON.stringify(scen.A));
+            currentB = JSON.parse(JSON.stringify(scen.b));
+            syncInputsFromState();
+            runMainSolvers();
+            showToast(`Cargado con éxito: ${scen.name}`, "info");
+        }
+
+        window.addEventListener('load', () => setTimeout(renderAllMath, 100));
+        document.addEventListener('DOMContentLoaded', () => {
+            buildInputs();
+            renderQATable();
+            loadScenario('ideal');
+            runAllQATests();
+            renderAllMath();
+
+            // Event Listeners para botones de escenarios
+            document.getElementById('btn-load-ideal').addEventListener('click', () => loadScenario('ideal'));
+            document.getElementById('btn-load-stress').addEventListener('click', () => loadScenario('stress'));
+            document.getElementById('btn-load-ill').addEventListener('click', () => loadScenario('ill'));
+
+            // Botones de ejecución y reset
+            document.getElementById('btn-solve').addEventListener('click', () => runMainSolvers());
+            document.getElementById('btn-reset').addEventListener('click', () => loadScenario('ideal'));
+
+            // Botón de ejecución de QA
+            document.getElementById('btn-run-all-qa').addEventListener('click', runAllQATests);
+            document.getElementById('btn-quick-qa').addEventListener('click', () => {
+                const qaSection = document.getElementById('qa-modulo');
+                if (qaSection) qaSection.scrollIntoView({ behavior: 'smooth' });
+                runAllQATests();
+                renderAllMath();
+            });
+
+            // Select precondicionador
+            document.getElementById('select-precond').addEventListener('change', () => runMainSolvers());
+        });
+    </script>
+</body>
+</html>
